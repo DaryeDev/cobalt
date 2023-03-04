@@ -1,7 +1,6 @@
 import "dotenv/config";
 
 import express from "express";
-import cors from "cors";
 import * as fs from "fs";
 import rateLimit from "express-rate-limit";
 
@@ -77,7 +76,7 @@ if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && 
         }
     }));
 
-    app.post('/api/:type', cors({ origin: process.env.selfURL, optionsSuccessStatus: 200 }), async (req, res) => {
+    app.post('/api/:type', async (req, res) => {
         try {
             let ip = sha256(req.header('x-forwarded-for') ? req.header('x-forwarded-for') : req.ip.replace('::ffff:', ''), process.env.streamSalt);
             let lang = languageCode(req);
@@ -112,7 +111,7 @@ if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && 
         }
     });
 
-    app.get('/api/:type', cors({ origin: process.env.selfURL, optionsSuccessStatus: 200 }), (req, res) => {
+    app.get('/api/:type', (req, res) => {
         try {
             let ip = sha256(req.header('x-forwarded-for') ? req.header('x-forwarded-for') : req.ip.replace('::ffff:', ''), process.env.streamSalt);
             switch (req.params.type) {
