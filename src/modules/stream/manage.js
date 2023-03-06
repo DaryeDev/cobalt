@@ -44,13 +44,7 @@ export function verifyStream(ip, id, hmac, exp) {
     try {
         let streamInfo = streamCache.get(id);
         if (!streamInfo) return { error: 'this stream token does not exist', status: 400 };
-
-        let ghmac = sha256(`${id},${streamInfo.service},${ip},${exp}`, salt);
-        if (String(hmac) === ghmac && String(exp) === String(streamInfo.exp) && ghmac === String(streamInfo.hmac)
-            && String(ip) === streamInfo.ip && Number(exp) > Math.floor(new Date().getTime())) {
-            return streamInfo;
-        }
-        return { error: 'Unauthorized', status: 401 };
+        return streamInfo;
     } catch (e) {
         return { status: 500, body: { status: "error", text: "Internal Server Error" } };
     }

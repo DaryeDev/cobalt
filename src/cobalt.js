@@ -1,10 +1,10 @@
 import "dotenv/config";
 
 import express from "express";
+import cors from "cors";
 import * as fs from "fs";
 import rateLimit from "express-rate-limit";
 
-import { getCurrentBranch, shortCommit } from "./modules/sub/currentCommit.js";
 import { appName, genericUserAgent, version } from "./modules/config.js";
 import { getJSON } from "./modules/api.js";
 import renderPage from "./modules/pageRender/page.js";
@@ -16,13 +16,13 @@ import { buildFront } from "./modules/build.js";
 import { changelogHistory } from "./modules/pageRender/onDemand.js";
 import { sha256 } from "./modules/sub/crypto.js";
 
-const commitHash = shortCommit();
-const branch = getCurrentBranch();
+
 const app = express();
+app.use(cors());
 
 app.disable('x-powered-by');
 
-if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && process.env.port) {
+if (fs.existsSync('./.env') && process.env.streamSalt) {
     const apiLimiter = rateLimit({
         windowMs: 60000,
         max: 12,
@@ -144,6 +144,47 @@ if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && 
                         res.status(j.status).json(j.body);
                     }
                     break;
+                case "getVideoInfo":
+                    console.log("query");
+                    try {
+                        let domain = req.query.url.match(
+                            /^[\w-]+:\/{2,}\[?([\w\.:-]+)\]?(?::[0-9]*)?/
+                        )[1];
+                        switch (domain) {
+                            case "www.youtube.com":
+                                var requestOptions = {
+                                    method: 'GET',
+                                    redirect: 'follow'
+                                };
+                                
+                                var getYoutubeIdByUrl = function( url ){
+                                    var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/;
+                                    var match = url.match(regExp);
+                                    
+                                    if(match&&match[7].length==11){ 
+                                        return match[7];
+                                    }
+                                    
+                                    return false;
+                                    };
+
+                                fetch("https://www.googleapis.com/youtube/v3/videos?part=snippet&id="+getYoutubeIdByUrl(req.query.url)+"&key="+process.env.G_KEY, requestOptions)
+                                    .then(response => response.json())
+                                    .then(result => {
+                                        res.status(200).json({ 'status': 'data', 'data': result });
+                                    })
+                                    .catch(error => console.log('error', error));
+                                break;
+                        
+                            default:
+                                res.status(400).json({ 'status': 'error', 'data': "platformNotSupported" });
+                                break;
+                        }
+                    } catch (e) {
+                        console.log(e)
+                        res.status(0).json({ 'status': 'error', 'data': e });
+                    }
+                    break;
                 default:
                     let j = apiJSON(0, { t: "unknown response type" })
                     res.status(j.status).json(j.body);
@@ -159,11 +200,11 @@ if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && 
     });
     app.get("/", (req, res) => {
         res.send(renderPage({
-            "hash": commitHash,
+            "hash": "",
             "type": "default",
             "lang": languageCode(req),
             "useragent": req.header('user-agent') ? req.header('user-agent') : genericUserAgent,
-            "branch": branch
+            "branch": ""
         }))
     });
     app.get("/favicon.ico", (req, res) => {
@@ -173,9 +214,9 @@ if (fs.existsSync('./.env') && process.env.selfURL && process.env.streamSalt && 
         res.redirect('/')
     });
 
-    app.listen(process.env.port, () => {
+    app.listen(8080, () => {
         let startTime = new Date();
-        console.log(`\n${Cyan(appName)} ${Bright(`v.${version}-${commitHash} (${branch})`)}\nStart time: ${Bright(`${startTime.toUTCString()} (${Math.floor(new Date().getTime())})`)}\n\nURL: ${Cyan(`${process.env.selfURL}`)}\nPort: ${process.env.port}\n`)
+        console.log(`\n${Cyan(appName)} ${Bright(`v.${version} ()`)}\nStart time: ${Bright(`${startTime.toUTCString()} (${Math.floor(new Date().getTime())})`)}\n\nURL: ${Cyan(`${process.env.selfURL}`)}\n`)
     });
 } else {
     console.log(Red(`cobalt hasn't been configured yet or configuration is invalid.\n`) + Bright(`please run the setup script to fix this: `) + Green(`npm run setup`))

@@ -1,11 +1,9 @@
 import { backdropLink, celebrationsEmoji, checkbox, collapsibleList, explanation, footerButtons, multiPagePopup, popup, popupWithBottomButtons, sep, settingsCategory, switcher, socialLink } from "./elements.js";
 import { services as s, appName, authorInfo, version, repo, donations, supportedAudio } from "../config.js";
-import { getCommitInfo } from "../sub/currentCommit.js";
 import loc from "../../localization/manager.js";
 import emoji from "../emoji.js";
 import changelogManager from "../changelog/changelogManager.js";
 
-let com = getCommitInfo();
 
 let enabledServices = Object.keys(s).filter((p) => {
     if (s[p].enabled) return true;
@@ -105,44 +103,6 @@ export default function(obj) {
                     }]
                 })
             }, {
-                name: "changelog",
-                title: `${emoji("🎉")} ${t('ChangelogTab')}`,
-                content: popup({
-                    name: "changelog",
-                    header: {
-                        closeAria: t('AccessibilityClosePopup'),
-                        title: `${emoji("🪄", 30)} ${t('TitlePopupChangelog')}`
-                    },
-                    body: [{
-                        text: `<div class="category-title">${t('ChangelogLastMajor')}</div>`,
-                        raw: true
-                    }, {
-                        text: changelogManager("banner") ? `<div class="changelog-banner"><img class="changelog-img" src="${changelogManager("banner")}" onerror="this.style.display='none'"></img></div>`: '',
-                        raw: true
-                    }, {
-                        text: changelogManager("title"),
-                        classes: ["changelog-subtitle"],
-                        nopadding: true
-                    }, {
-                        text: changelogManager("content")
-                    }, {
-                        text: `${sep()}<span class="text-backdrop">${obj.hash}:</span> ${com[0]}`,
-                        classes: ["changelog-subtitle"],
-                        nopadding: true
-                    }, {
-                        text: com[1]
-                    }, {
-                        text: backdropLink(`${repo}/commits`, t('LinkGitHubChanges')),
-                        classes: ["bottom-link"]
-                    }, {
-                        text: `<div class="category-title">${t('ChangelogOlder')}</div>`,
-                        raw: true
-                    }, {
-                        text: `<div id="changelog-history"><button class="switch bottom-margin" onclick="loadOnDemand('changelog-history', '0')">${t("ChangelogPressToExpand")}</button></div>`,
-                        raw: true
-                    }]
-                })
-            }, {
                 name: "donate",
                 title: `${emoji("💰")} ${t('DonationsTab')}`,
                 content: popup({
@@ -186,8 +146,8 @@ export default function(obj) {
             closeAria: t('AccessibilityClosePopup'),
             header: {
                 aboveTitle: {
-                    text: `v.${version}-${obj.hash} (${obj.branch})`,
-                    url: `${repo}/commit/${obj.hash}`
+                    text: `v.${version} (${obj.branch})`,
+                    url: `${repo}`
                 },
                 title: `${emoji("⚙️", 30)} ${t('TitlePopupSettings')}`
             },
@@ -393,6 +353,6 @@ export default function(obj) {
     <script type="text/javascript" src="cobalt.js"></script>
 </html>`;
     } catch (err) {
-        return `${t('ErrorPageRenderFail', obj.hash)}`;
+        return `${t('ErrorPageRenderFail')}`;
     }
 }
